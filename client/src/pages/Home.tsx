@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   LogOut,
   User,
-  Menu
+  Menu,
+  Video
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,10 +37,10 @@ export default function Home() {
       color: "bg-[#2E8B57]"
     },
     {
-      icon: Search,
-      title: "البحث في السجلات",
-      description: "البحث في قاعدة بيانات المفقودين المسجلين",
-      href: "/detection",
+      icon: Video,
+      title: "تحليل الفيديو",
+      description: "رفع فيديو للبحث عن المفقودين بتقنية التعرف على الوجوه",
+      href: "/video-analysis",
       color: "bg-[#4CAF50]"
     },
   ];
@@ -69,11 +70,13 @@ export default function Home() {
         <div className="container mx-auto">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo and Title */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#1B7D3E] rounded-full flex items-center justify-center">
-                <Search className="w-6 h-6 text-white" />
-              </div>
-              <div>
+            <div className="flex items-center gap-4">
+              <img 
+                src="/absher-logo.png" 
+                alt="أبشر" 
+                className="h-12 lg:h-14 w-auto"
+              />
+              <div className="border-r border-gray-200 pr-4">
                 <h1 className="text-lg lg:text-xl font-bold text-[#1B7D3E]">نظام تتبع المفقودين</h1>
                 <p className="text-xs text-gray-500 hidden sm:block">وزارة الداخلية</p>
               </div>
@@ -286,9 +289,11 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                  <Search className="w-5 h-5 text-[#1B7D3E]" />
-                </div>
+                <img 
+                  src="/absher-logo.png" 
+                  alt="أبشر" 
+                  className="h-10 w-auto bg-white rounded-lg p-1"
+                />
                 <span className="font-bold text-lg">نظام تتبع المفقودين</span>
               </div>
               <p className="text-gray-400 text-sm">

@@ -28,3 +28,9 @@
 - [x] Update Home page layout
 - [x] Update Report form page design
 - [x] Update Detection page design
+
+## New Features (User Request)
+- [x] Change font to Cairo (better Arabic font)
+- [x] Add official Absher logo
+- [x] Add video upload feature for face recognition
+- [x] Implement face recognition from video (simulation)

@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ReportForm from "./pages/ReportForm";
 import Detection from "./pages/Detection";
+import VideoAnalysis from "./pages/VideoAnalysis";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/report"} component={ReportForm} />
       <Route path={"/detection"} component={Detection} />
+      <Route path={"/video-analysis"} component={VideoAnalysis} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

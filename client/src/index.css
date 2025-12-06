@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Import Arabic font */
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -43,7 +43,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: 'Tajawal', sans-serif;
+  --font-sans: 'Cairo', sans-serif;
 }
 
 /* Absher-style Light Theme */
@@ -129,11 +129,11 @@
     @apply border-border outline-ring/50;
   }
   html {
-    font-family: 'Tajawal', sans-serif;
+    font-family: 'Cairo', sans-serif;
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Tajawal', sans-serif;
+    font-family: 'Cairo', sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

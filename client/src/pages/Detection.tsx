@@ -169,9 +169,11 @@ export default function Detection() {
             <div className="flex items-center gap-3">
               <Link href="/">
                 <div className="flex items-center gap-3 cursor-pointer">
-                  <div className="w-10 h-10 bg-[#1B7D3E] rounded-full flex items-center justify-center">
-                    <Search className="w-5 h-5 text-white" />
-                  </div>
+                  <img 
+                    src="/absher-logo.png" 
+                    alt="أبشر" 
+                    className="h-10 w-auto"
+                  />
                   <span className="font-bold text-[#1B7D3E] hidden sm:block">نظام تتبع المفقودين</span>
                 </div>
               </Link>
