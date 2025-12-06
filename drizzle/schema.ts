@@ -2,16 +2,9 @@ import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-or
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -25,4 +18,31 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Missing persons table - stores reported missing person information
+ */
+export const missingPersons = mysqlTable("missing_persons", {
+  id: int("id").autoincrement().primaryKey(),
+  // Reporter info
+  reporterId: int("reporterId").notNull(),
+  // Missing person info
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  age: int("age"),
+  gender: mysqlEnum("gender", ["male", "female"]).notNull(),
+  nationalId: varchar("nationalId", { length: 20 }),
+  phoneNumber: varchar("phoneNumber", { length: 20 }),
+  description: text("description"),
+  lastSeenLocation: text("lastSeenLocation"),
+  lastSeenDate: timestamp("lastSeenDate"),
+  // Photo stored in S3
+  photoUrl: text("photoUrl"),
+  photoKey: varchar("photoKey", { length: 255 }),
+  // Status
+  status: mysqlEnum("status", ["missing", "found", "closed"]).default("missing").notNull(),
+  // Timestamps
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MissingPerson = typeof missingPersons.$inferSelect;
+export type InsertMissingPerson = typeof missingPersons.$inferInsert;

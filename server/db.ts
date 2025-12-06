@@ -1,11 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, missingPersons, InsertMissingPerson, MissingPerson } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -89,4 +88,54 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Missing Persons Queries
+
+export async function createMissingPerson(data: InsertMissingPerson): Promise<MissingPerson> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(missingPersons).values(data);
+  const insertId = result[0].insertId;
+  
+  const [person] = await db.select().from(missingPersons).where(eq(missingPersons.id, insertId));
+  return person;
+}
+
+export async function getAllMissingPersons(): Promise<MissingPerson[]> {
+  const db = await getDb();
+  if (!db) {
+    return [];
+  }
+
+  return db.select().from(missingPersons).where(eq(missingPersons.status, "missing")).orderBy(desc(missingPersons.createdAt));
+}
+
+export async function getMissingPersonById(id: number): Promise<MissingPerson | undefined> {
+  const db = await getDb();
+  if (!db) {
+    return undefined;
+  }
+
+  const [person] = await db.select().from(missingPersons).where(eq(missingPersons.id, id));
+  return person;
+}
+
+export async function updateMissingPersonStatus(id: number, status: "missing" | "found" | "closed"): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.update(missingPersons).set({ status }).where(eq(missingPersons.id, id));
+}
+
+export async function getMissingPersonsByReporter(reporterId: number): Promise<MissingPerson[]> {
+  const db = await getDb();
+  if (!db) {
+    return [];
+  }
+
+  return db.select().from(missingPersons).where(eq(missingPersons.reporterId, reporterId)).orderBy(desc(missingPersons.createdAt));
+}
