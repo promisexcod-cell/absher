@@ -21,3 +21,10 @@
 ## Bug Fixes
 - [x] Fix camera video feed not displaying after permission granted
 - [x] Fix camera state not updating - video stream active but UI shows camera off
+
+## Design Updates
+- [x] Redesign website to match Absher official design style
+- [x] Update color scheme to Absher green/white theme
+- [x] Update Home page layout
+- [x] Update Report form page design
+- [x] Update Detection page design

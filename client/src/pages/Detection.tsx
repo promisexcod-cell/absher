@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, CameraOff, AlertTriangle, User, MapPin, Loader2 } from "lucide-react";
+import { Camera, CameraOff, AlertTriangle, User, MapPin, Loader2, Search, ArrowRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface DetectedPerson {
   id: number;
@@ -20,6 +21,7 @@ interface DetectedPerson {
 }
 
 export default function Detection() {
+  const { user, isAuthenticated, logout } = useAuth();
   const [cameraState, setCameraState] = useState<"off" | "loading" | "on">("off");
   const [detectedPersons, setDetectedPersons] = useState<DetectedPerson[]>([]);
   
@@ -46,7 +48,6 @@ export default function Detection() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        // Use event listener instead of property assignment
         const handleCanPlay = () => {
           videoRef.current?.play()
             .then(() => {
@@ -59,7 +60,6 @@ export default function Detection() {
               toast.error("حدث خطأ في تشغيل الفيديو");
             });
           
-          // Remove listener after first trigger
           videoRef.current?.removeEventListener("canplay", handleCanPlay);
         };
         
@@ -73,7 +73,6 @@ export default function Detection() {
   }, []);
 
   const stopCamera = useCallback(() => {
-    // Stop all tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
         track.stop();
@@ -81,12 +80,10 @@ export default function Detection() {
       streamRef.current = null;
     }
     
-    // Clear video source
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     
-    // Clear detection interval
     if (detectionIntervalRef.current) {
       clearInterval(detectionIntervalRef.current);
       detectionIntervalRef.current = null;
@@ -96,7 +93,6 @@ export default function Detection() {
     setDetectedPersons([]);
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -108,7 +104,6 @@ export default function Detection() {
     };
   }, []);
 
-  // Simulate face detection
   const simulateDetection = useCallback(() => {
     if (!missingPersons || missingPersons.length === 0 || cameraState !== "on") return;
     
@@ -152,7 +147,6 @@ export default function Detection() {
     }
   }, [missingPersons, cameraState]);
 
-  // Start detection when camera is on
   useEffect(() => {
     if (cameraState === "on") {
       detectionIntervalRef.current = setInterval(simulateDetection, 3000);
@@ -167,22 +161,75 @@ export default function Detection() {
   }, [cameraState, simulateDetection]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4" dir="rtl">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white text-center flex items-center justify-center gap-2">
-              <Camera className="w-6 h-6 text-emerald-500" />
-              نظام البحث عن المفقودين
+    <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
+        <div className="container mx-auto">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <Link href="/">
+                <div className="flex items-center gap-3 cursor-pointer">
+                  <div className="w-10 h-10 bg-[#1B7D3E] rounded-full flex items-center justify-center">
+                    <Search className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-bold text-[#1B7D3E] hidden sm:block">نظام تتبع المفقودين</span>
+                </div>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isAuthenticated && (
+                <>
+                  <div className="hidden sm:flex items-center gap-2 text-gray-700">
+                    <User className="w-4 h-4" />
+                    <span className="text-sm">{user?.name || "مستخدم"}</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => logout()}
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Page Header */}
+      <div className="bg-gradient-to-l from-[#1B7D3E] to-[#2E8B57] text-white py-8">
+        <div className="container mx-auto">
+          <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+            <Link href="/" className="hover:text-white">الرئيسية</Link>
+            <span>/</span>
+            <span>البحث بالكاميرا</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-3">
+            <Camera className="w-8 h-8" />
+            نظام البحث عن المفقودين
+          </h1>
+          <p className="text-white/80 mt-2">افتح الكاميرا للبحث عن الأشخاص المفقودين المسجلين في النظام</p>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-8 space-y-6">
+        {/* Camera Card */}
+        <Card className="bg-white border-0 shadow-lg">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
+              <Camera className="w-5 h-5 text-[#1B7D3E]" />
+              كاميرا البحث
             </CardTitle>
-            <CardDescription className="text-slate-400 text-center">
-              افتح الكاميرا للبحث عن الأشخاص المفقودين المسجلين في النظام
+            <CardDescription className="text-gray-500">
+              قم بتشغيل الكاميرا لبدء البحث عن المفقودين
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="pt-6 space-y-6">
             {/* Camera View */}
-            <div className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-700">
-              {/* Video element - always rendered but hidden when off */}
+            <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-200 shadow-inner">
               <video
                 ref={videoRef}
                 autoPlay
@@ -192,26 +239,23 @@ export default function Detection() {
                 style={{ transform: "scaleX(-1)" }}
               />
               
-              {/* Camera off state */}
               {cameraState === "off" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
-                  <CameraOff className="w-16 h-16 mb-4" />
-                  <p>الكاميرا متوقفة</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-100">
+                  <CameraOff className="w-20 h-20 mb-4 text-gray-300" />
+                  <p className="text-lg">الكاميرا متوقفة</p>
+                  <p className="text-sm text-gray-400">اضغط على زر التشغيل لبدء البحث</p>
                 </div>
               )}
               
-              {/* Loading state */}
               {cameraState === "loading" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900">
-                  <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
-                  <p className="text-white">جاري تحميل الكاميرا...</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100">
+                  <Loader2 className="w-16 h-16 text-[#1B7D3E] animate-spin mb-4" />
+                  <p className="text-gray-600 text-lg">جاري تحميل الكاميرا...</p>
                 </div>
               )}
               
-              {/* Detection overlay - only when camera is on */}
               {cameraState === "on" && (
                 <>
-                  {/* Detection boxes */}
                   {detectedPersons.map(person => (
                     <div
                       key={person.id}
@@ -223,29 +267,28 @@ export default function Detection() {
                         height: person.height,
                       }}
                     >
-                      <div className="absolute inset-0 border-4 border-emerald-500 rounded">
-                        <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-400 -translate-x-1 -translate-y-1" />
-                        <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-400 translate-x-1 -translate-y-1" />
-                        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-400 -translate-x-1 translate-y-1" />
-                        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-400 translate-x-1 translate-y-1" />
+                      <div className="absolute inset-0 border-4 border-[#1B7D3E] rounded-lg shadow-lg">
+                        <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#C9A227] -translate-x-1 -translate-y-1" />
+                        <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#C9A227] translate-x-1 -translate-y-1" />
+                        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#C9A227] -translate-x-1 translate-y-1" />
+                        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#C9A227] translate-x-1 translate-y-1" />
                       </div>
                       
-                      <div className="absolute -top-9 left-0 right-0 bg-emerald-600 text-white text-center py-1.5 px-3 rounded text-sm font-bold whitespace-nowrap">
+                      <div className="absolute -top-10 left-0 right-0 bg-[#1B7D3E] text-white text-center py-2 px-3 rounded-lg text-sm font-bold whitespace-nowrap shadow-lg">
                         {person.fullName}
                       </div>
                       
-                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">
+                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow">
                         مفقود
                       </div>
                     </div>
                   ))}
                   
-                  {/* Scanning indicator */}
                   <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute inset-0 border-2 border-emerald-500/30 animate-pulse" />
-                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 px-3 py-1.5 rounded-full shadow-lg">
-                      <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
-                      <span className="text-white text-sm font-medium">جاري البحث</span>
+                    <div className="absolute inset-0 border-4 border-[#1B7D3E]/20 rounded-xl" />
+                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500 px-4 py-2 rounded-full shadow-lg">
+                      <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+                      <span className="text-white text-sm font-bold">جاري البحث</span>
                     </div>
                   </div>
                 </>
@@ -259,7 +302,7 @@ export default function Detection() {
                   onClick={stopCamera}
                   variant="destructive"
                   size="lg"
-                  className="px-8"
+                  className="px-8 py-6 text-lg"
                 >
                   <CameraOff className="w-5 h-5 ml-2" />
                   إيقاف الكاميرا
@@ -267,7 +310,7 @@ export default function Detection() {
               ) : (
                 <Button 
                   onClick={startCamera}
-                  className="bg-emerald-600 hover:bg-emerald-700 px-8"
+                  className="bg-[#1B7D3E] hover:bg-[#156332] px-8 py-6 text-lg"
                   size="lg"
                   disabled={cameraState === "loading"}
                 >
@@ -288,10 +331,10 @@ export default function Detection() {
 
             {/* Detected Person Details */}
             {detectedPersons.length > 0 && (
-              <Card className="bg-emerald-900/30 border-emerald-700">
-                <CardHeader>
-                  <CardTitle className="text-lg text-emerald-400 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5" />
+              <Card className="bg-[#E8F5E9] border-[#1B7D3E] border-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-[#1B7D3E] flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-[#C9A227]" />
                     تم العثور على شخص مفقود!
                   </CardTitle>
                 </CardHeader>
@@ -302,22 +345,22 @@ export default function Detection() {
                         <img 
                           src={person.photoUrl} 
                           alt={person.fullName}
-                          className="w-24 h-24 object-cover rounded-lg border-2 border-emerald-500"
+                          className="w-24 h-24 object-cover rounded-xl border-4 border-[#1B7D3E] shadow-lg"
                         />
                       )}
-                      <div className="space-y-2 text-white">
-                        <h3 className="text-xl font-bold flex items-center gap-2">
-                          <User className="w-5 h-5 text-emerald-400" />
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                          <User className="w-5 h-5 text-[#1B7D3E]" />
                           {person.fullName}
                         </h3>
                         {person.age && (
-                          <p className="text-slate-300">
+                          <p className="text-gray-600">
                             العمر: {person.age} سنة - {person.gender === "male" ? "ذكر" : "أنثى"}
                           </p>
                         )}
                         {person.lastSeenLocation && (
-                          <p className="text-slate-300 flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-emerald-400" />
+                          <p className="text-gray-600 flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-[#1B7D3E]" />
                             آخر مشاهدة: {person.lastSeenLocation}
                           </p>
                         )}
@@ -331,40 +374,40 @@ export default function Detection() {
         </Card>
 
         {/* Missing Persons List */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">الأشخاص المفقودين المسجلين</CardTitle>
-            <CardDescription className="text-slate-400">
+        <Card className="bg-white border-0 shadow-lg">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="text-xl text-gray-800">الأشخاص المفقودين المسجلين</CardTitle>
+            <CardDescription className="text-gray-500">
               قائمة بجميع الأشخاص المفقودين الذين يتم البحث عنهم
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {missingPersons && missingPersons.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {missingPersons.map(person => (
-                  <Card key={person.id} className="bg-slate-700/50 border-slate-600">
+                  <Card key={person.id} className="bg-gray-50 border border-gray-200 hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex gap-3">
                         {person.photoUrl ? (
                           <img 
                             src={person.photoUrl} 
                             alt={person.fullName}
-                            className="w-16 h-16 object-cover rounded-lg"
+                            className="w-16 h-16 object-cover rounded-lg border-2 border-[#1B7D3E]"
                           />
                         ) : (
-                          <div className="w-16 h-16 bg-slate-600 rounded-lg flex items-center justify-center">
-                            <User className="w-8 h-8 text-slate-400" />
+                          <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <User className="w-8 h-8 text-gray-400" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-white font-medium truncate">{person.fullName}</h4>
+                          <h4 className="text-gray-800 font-semibold truncate">{person.fullName}</h4>
                           {person.age && (
-                            <p className="text-slate-400 text-sm">
+                            <p className="text-gray-500 text-sm">
                               {person.age} سنة - {person.gender === "male" ? "ذكر" : "أنثى"}
                             </p>
                           )}
                           {person.lastSeenLocation && (
-                            <p className="text-slate-400 text-sm truncate flex items-center gap-1">
+                            <p className="text-gray-500 text-sm truncate flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
                               {person.lastSeenLocation}
                             </p>
@@ -376,11 +419,11 @@ export default function Detection() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-400">
-                <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>لا يوجد أشخاص مفقودين مسجلين حالياً</p>
+              <div className="text-center py-12 text-gray-400">
+                <User className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg text-gray-500">لا يوجد أشخاص مفقودين مسجلين حالياً</p>
                 <Link href="/report">
-                  <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+                  <Button className="mt-4 bg-[#1B7D3E] hover:bg-[#156332]">
                     إضافة بلاغ جديد
                   </Button>
                 </Link>
@@ -388,6 +431,16 @@ export default function Detection() {
             )}
           </CardContent>
         </Card>
+
+        {/* Back Link */}
+        <div className="text-center">
+          <Link href="/">
+            <Button variant="ghost" className="text-gray-600">
+              <ArrowRight className="w-4 h-4 ml-2" />
+              العودة للرئيسية
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

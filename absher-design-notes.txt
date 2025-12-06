@@ -1,0 +1,35 @@
+Absher Design Analysis:
+
+Colors:
+- Primary Green: #1B7D3E (dark green) or #2E8B57 (sea green)
+- Light Green: #4CAF50 or #5CB85C
+- Background: White/Light Gray (#F5F5F5)
+- Text: Dark gray/black
+- Accent: Gold/Yellow for highlights
+
+Layout:
+- Clean white background
+- Header with logo on right, search and language on left
+- Vision 2030 logo in header
+- Green banner/hero section
+- Card-based service sections
+- Login form on the right side
+- RTL (Right-to-Left) layout
+
+Typography:
+- Arabic fonts (likely Tajawal or similar)
+- Clean, modern sans-serif
+
+UI Elements:
+- Rounded corners on cards and buttons
+- Green primary buttons
+- White cards with subtle shadows
+- Icon-based navigation
+- Service cards with icons
+
+Header Elements:
+- Saudi emblem/logo
+- Search icon
+- Language toggle (Arabic/English)
+- Navigation icons (About, Services, etc.)
+- Vision 2030 logo

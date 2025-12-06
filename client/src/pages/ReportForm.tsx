@@ -8,12 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useState, useRef, useCallback } from "react";
-import { Camera, Upload, X, Loader2, CheckCircle } from "lucide-react";
+import { Camera, Upload, X, Loader2, CheckCircle, FileText, ArrowRight, Search, User, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 export default function ReportForm() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
   const [, navigate] = useLocation();
   
   const [formData, setFormData] = useState({
@@ -126,79 +126,156 @@ export default function ReportForm() {
     }
   };
 
+  // Header Component
+  const Header = () => (
+    <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
+      <div className="container mx-auto">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <Link href="/">
+              <div className="flex items-center gap-3 cursor-pointer">
+                <div className="w-10 h-10 bg-[#1B7D3E] rounded-full flex items-center justify-center">
+                  <Search className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-bold text-[#1B7D3E] hidden sm:block">نظام تتبع المفقودين</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 text-gray-700">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm">{user?.name || "مستخدم"}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => logout()}
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
+        <Header />
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="w-10 h-10 animate-spin text-[#1B7D3E]" />
+        </div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4" dir="rtl">
-        <Card className="w-full max-w-md bg-slate-800/50 border-slate-700">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-white">تسجيل الدخول مطلوب</CardTitle>
-            <CardDescription className="text-slate-400">
-              يجب تسجيل الدخول لإرسال بلاغ عن شخص مفقود
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-              onClick={() => window.location.href = getLoginUrl()}
-            >
-              تسجيل الدخول
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
+        <Header />
+        <div className="container mx-auto py-16">
+          <Card className="max-w-md mx-auto bg-white border-0 shadow-lg">
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-[#1B7D3E]" />
+              </div>
+              <CardTitle className="text-2xl text-gray-800">تسجيل الدخول مطلوب</CardTitle>
+              <CardDescription className="text-gray-500">
+                يجب تسجيل الدخول لإرسال بلاغ عن شخص مفقود
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Button 
+                className="w-full bg-[#1B7D3E] hover:bg-[#156332] text-white py-6 text-lg"
+                onClick={() => window.location.href = getLoginUrl()}
+              >
+                تسجيل الدخول
+              </Button>
+              <Link href="/">
+                <Button variant="ghost" className="w-full mt-3 text-gray-600">
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                  العودة للرئيسية
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4" dir="rtl">
-        <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 text-center">
-          <CardContent className="pt-8 pb-8">
-            <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">تم إرسال البلاغ بنجاح</h2>
-            <p className="text-slate-400">جاري تحويلك إلى صفحة البحث...</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
+        <Header />
+        <div className="container mx-auto py-16">
+          <Card className="max-w-md mx-auto bg-white border-0 shadow-lg text-center">
+            <CardContent className="py-12">
+              <div className="w-20 h-20 bg-[#E8F5E9] rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-10 h-10 text-[#1B7D3E]" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">تم إرسال البلاغ بنجاح</h2>
+              <p className="text-gray-500">جاري تحويلك إلى صفحة البحث...</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4" dir="rtl">
-      <div className="max-w-2xl mx-auto">
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white text-center">إبلاغ عن شخص مفقود</CardTitle>
-            <CardDescription className="text-slate-400 text-center">
-              أدخل معلومات الشخص المفقود وصورته
+    <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
+      <Header />
+      
+      {/* Page Header */}
+      <div className="bg-gradient-to-l from-[#1B7D3E] to-[#2E8B57] text-white py-8">
+        <div className="container mx-auto">
+          <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+            <Link href="/" className="hover:text-white">الرئيسية</Link>
+            <span>/</span>
+            <span>إبلاغ عن مفقود</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold">إبلاغ عن شخص مفقود</h1>
+          <p className="text-white/80 mt-2">أدخل معلومات الشخص المفقود وصورته للمساعدة في البحث عنه</p>
+        </div>
+      </div>
+
+      <div className="container mx-auto py-8">
+        <Card className="max-w-3xl mx-auto bg-white border-0 shadow-lg">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-[#1B7D3E]" />
+              نموذج البلاغ
+            </CardTitle>
+            <CardDescription className="text-gray-500">
+              الحقول المميزة بـ (*) مطلوبة
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* Photo Section */}
               <div className="space-y-4">
-                <Label className="text-white text-lg">صورة الشخص المفقود</Label>
+                <Label className="text-gray-800 text-lg font-semibold">صورة الشخص المفقود</Label>
                 
                 {photoBase64 ? (
                   <div className="relative w-48 h-48 mx-auto">
                     <img 
                       src={photoBase64} 
                       alt="صورة الشخص" 
-                      className="w-full h-full object-cover rounded-lg border-2 border-emerald-500"
+                      className="w-full h-full object-cover rounded-xl border-4 border-[#1B7D3E] shadow-lg"
                     />
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="absolute -top-2 -right-2"
+                      className="absolute -top-3 -right-3 rounded-full shadow-lg"
                       onClick={() => setPhotoBase64(null)}
                     >
                       <X className="w-4 h-4" />
@@ -210,26 +287,27 @@ export default function ReportForm() {
                       ref={videoRef}
                       autoPlay
                       playsInline
-                      className="w-full max-w-md mx-auto rounded-lg border-2 border-slate-600"
+                      muted
+                      className="w-full max-w-md mx-auto rounded-xl border-2 border-gray-200 shadow-md"
                     />
-                    <div className="flex gap-2 justify-center">
-                      <Button type="button" onClick={capturePhoto} className="bg-emerald-600 hover:bg-emerald-700">
+                    <div className="flex gap-3 justify-center">
+                      <Button type="button" onClick={capturePhoto} className="bg-[#1B7D3E] hover:bg-[#156332]">
                         <Camera className="w-4 h-4 ml-2" />
                         التقاط الصورة
                       </Button>
-                      <Button type="button" variant="outline" onClick={stopCamera}>
+                      <Button type="button" variant="outline" onClick={stopCamera} className="border-gray-300">
                         إلغاء
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-4 justify-center">
-                    <Button type="button" onClick={startCamera} variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  <div className="flex gap-4 justify-center p-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <Button type="button" onClick={startCamera} className="bg-[#1B7D3E] hover:bg-[#156332]">
                       <Camera className="w-4 h-4 ml-2" />
                       فتح الكاميرا
                     </Button>
                     <Label className="cursor-pointer">
-                      <div className="flex items-center gap-2 px-4 py-2 border border-slate-600 rounded-md text-slate-300 hover:bg-slate-700 transition-colors">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#1B7D3E] rounded-lg text-[#1B7D3E] hover:bg-[#E8F5E9] transition-colors font-medium">
                         <Upload className="w-4 h-4" />
                         رفع صورة
                       </div>
@@ -245,117 +323,137 @@ export default function ReportForm() {
               </div>
 
               {/* Personal Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-white">الاسم الكامل *</Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                    className="bg-slate-700/50 border-slate-600 text-white"
-                    placeholder="أدخل الاسم الكامل"
-                    required
-                  />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">المعلومات الشخصية</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-gray-700">الاسم الكامل *</Label>
+                    <Input
+                      id="fullName"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                      className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]"
+                      placeholder="أدخل الاسم الكامل"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="age" className="text-gray-700">العمر</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
+                      className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]"
+                      placeholder="أدخل العمر"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gender" className="text-gray-700">الجنس *</Label>
+                    <Select
+                      value={formData.gender}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value as "male" | "female" }))}
+                    >
+                      <SelectTrigger className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]">
+                        <SelectValue placeholder="اختر الجنس" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">ذكر</SelectItem>
+                        <SelectItem value="female">أنثى</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="nationalId" className="text-gray-700">رقم الهوية</Label>
+                    <Input
+                      id="nationalId"
+                      value={formData.nationalId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, nationalId: e.target.value }))}
+                      className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]"
+                      placeholder="أدخل رقم الهوية"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber" className="text-gray-700">رقم الجوال</Label>
+                    <Input
+                      id="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                      className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]"
+                      placeholder="05xxxxxxxx"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Last Seen Info */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">معلومات آخر مشاهدة</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="lastSeenLocation" className="text-gray-700">مكان آخر مشاهدة</Label>
+                    <Input
+                      id="lastSeenLocation"
+                      value={formData.lastSeenLocation}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastSeenLocation: e.target.value }))}
+                      className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]"
+                      placeholder="المدينة، الحي، الشارع"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastSeenDate" className="text-gray-700">تاريخ آخر مشاهدة</Label>
+                    <Input
+                      id="lastSeenDate"
+                      type="date"
+                      value={formData.lastSeenDate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastSeenDate: e.target.value }))}
+                      className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E]"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age" className="text-white">العمر</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                    className="bg-slate-700/50 border-slate-600 text-white"
-                    placeholder="أدخل العمر"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-white">الجنس *</Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value as "male" | "female" }))}
-                  >
-                    <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                      <SelectValue placeholder="اختر الجنس" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">ذكر</SelectItem>
-                      <SelectItem value="female">أنثى</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nationalId" className="text-white">رقم الهوية</Label>
-                  <Input
-                    id="nationalId"
-                    value={formData.nationalId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nationalId: e.target.value }))}
-                    className="bg-slate-700/50 border-slate-600 text-white"
-                    placeholder="أدخل رقم الهوية"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber" className="text-white">رقم الهاتف</Label>
-                  <Input
-                    id="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                    className="bg-slate-700/50 border-slate-600 text-white"
-                    placeholder="أدخل رقم الهاتف"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lastSeenDate" className="text-white">تاريخ آخر مشاهدة</Label>
-                  <Input
-                    id="lastSeenDate"
-                    type="date"
-                    value={formData.lastSeenDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lastSeenDate: e.target.value }))}
-                    className="bg-slate-700/50 border-slate-600 text-white"
+                  <Label htmlFor="description" className="text-gray-700">وصف إضافي</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="border-gray-200 focus:border-[#1B7D3E] focus:ring-[#1B7D3E] min-h-[100px]"
+                    placeholder="أي معلومات إضافية قد تساعد في التعرف على الشخص (الملابس، علامات مميزة، إلخ)"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastSeenLocation" className="text-white">مكان آخر مشاهدة</Label>
-                <Input
-                  id="lastSeenLocation"
-                  value={formData.lastSeenLocation}
-                  onChange={(e) => setFormData(prev => ({ ...prev, lastSeenLocation: e.target.value }))}
-                  className="bg-slate-700/50 border-slate-600 text-white"
-                  placeholder="أدخل مكان آخر مشاهدة"
-                />
+              {/* Submit Button */}
+              <div className="flex gap-4 pt-4 border-t border-gray-100">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-[#1B7D3E] hover:bg-[#156332] text-white py-6 text-lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                      جاري الإرسال...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-5 h-5 ml-2" />
+                      إرسال البلاغ
+                    </>
+                  )}
+                </Button>
+                <Link href="/">
+                  <Button type="button" variant="outline" className="border-gray-300 text-gray-600 py-6">
+                    إلغاء
+                  </Button>
+                </Link>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-white">وصف إضافي</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="bg-slate-700/50 border-slate-600 text-white min-h-[100px]"
-                  placeholder="أدخل أي معلومات إضافية عن الشخص المفقود (الملابس، علامات مميزة، إلخ)"
-                />
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-lg py-6"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-                    جاري الإرسال...
-                  </>
-                ) : (
-                  "إرسال البلاغ"
-                )}
-              </Button>
             </form>
           </CardContent>
         </Card>
