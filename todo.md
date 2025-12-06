@@ -20,3 +20,4 @@
 
 ## Bug Fixes
 - [x] Fix camera video feed not displaying after permission granted
+- [x] Fix camera state not updating - video stream active but UI shows camera off

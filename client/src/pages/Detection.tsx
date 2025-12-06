@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, CameraOff, AlertTriangle, User, MapPin } from "lucide-react";
+import { Camera, CameraOff, AlertTriangle, User, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
@@ -20,22 +20,19 @@ interface DetectedPerson {
 }
 
 export default function Detection() {
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [cameraState, setCameraState] = useState<"off" | "loading" | "on">("off");
   const [detectedPersons, setDetectedPersons] = useState<DetectedPerson[]>([]);
-  const [isDetecting, setIsDetecting] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const animationRef = useRef<number | null>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const { data: missingPersons } = trpc.missingPerson.list.useQuery();
 
   const startCamera = useCallback(async () => {
+    setCameraState("loading");
+    
     try {
-      setIsVideoReady(false);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: "user",
@@ -44,74 +41,84 @@ export default function Detection() {
         },
       });
       
+      streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setIsCameraOpen(true);
         
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          if (videoRef.current) {
-            videoRef.current.play().then(() => {
-              setIsVideoReady(true);
-              setIsDetecting(true);
+        // Use event listener instead of property assignment
+        const handleCanPlay = () => {
+          videoRef.current?.play()
+            .then(() => {
+              setCameraState("on");
               toast.success("تم تشغيل الكاميرا - جاري البحث عن المفقودين");
-            }).catch((err) => {
+            })
+            .catch((err) => {
               console.error("Error playing video:", err);
+              setCameraState("off");
               toast.error("حدث خطأ في تشغيل الفيديو");
             });
-          }
+          
+          // Remove listener after first trigger
+          videoRef.current?.removeEventListener("canplay", handleCanPlay);
         };
+        
+        videoRef.current.addEventListener("canplay", handleCanPlay);
       }
     } catch (error) {
+      console.error("Camera error:", error);
+      setCameraState("off");
       toast.error("لا يمكن الوصول إلى الكاميرا - تأكد من منح الإذن");
-      console.error(error);
     }
   }, []);
 
   const stopCamera = useCallback(() => {
+    // Stop all tracks
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
       streamRef.current = null;
     }
+    
+    // Clear video source
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
+    
+    // Clear detection interval
     if (detectionIntervalRef.current) {
       clearInterval(detectionIntervalRef.current);
       detectionIntervalRef.current = null;
     }
-    setIsCameraOpen(false);
-    setIsVideoReady(false);
-    setIsDetecting(false);
+    
+    setCameraState("off");
     setDetectedPersons([]);
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopCamera();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (detectionIntervalRef.current) {
+        clearInterval(detectionIntervalRef.current);
+      }
     };
-  }, [stopCamera]);
+  }, []);
 
-  // Simulate face detection - in a real app, this would use a face detection API
+  // Simulate face detection
   const simulateDetection = useCallback(() => {
-    if (!missingPersons || missingPersons.length === 0 || !isVideoReady) return;
+    if (!missingPersons || missingPersons.length === 0 || cameraState !== "on") return;
     
-    // Randomly decide if we "detect" someone (for simulation purposes)
-    const shouldDetect = Math.random() > 0.7; // 30% chance of detection
+    const shouldDetect = Math.random() > 0.7;
     
     if (shouldDetect) {
       const randomPerson = missingPersons[Math.floor(Math.random() * missingPersons.length)];
       
-      // Generate random position for the bounding box based on displayed video size
-      const videoElement = videoRef.current;
-      const displayWidth = videoElement?.clientWidth || 640;
-      const displayHeight = videoElement?.clientHeight || 480;
+      const displayWidth = videoRef.current?.clientWidth || 640;
+      const displayHeight = videoRef.current?.clientHeight || 480;
       
       const boxWidth = 120 + Math.random() * 80;
       const boxHeight = boxWidth * 1.3;
@@ -133,7 +140,6 @@ export default function Detection() {
       
       setDetectedPersons([detected]);
       
-      // Show alert
       toast.warning(
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -144,12 +150,11 @@ export default function Detection() {
     } else {
       setDetectedPersons([]);
     }
-  }, [missingPersons, isVideoReady]);
+  }, [missingPersons, cameraState]);
 
-  // Start detection simulation when camera is open and video is ready
+  // Start detection when camera is on
   useEffect(() => {
-    if (isCameraOpen && isDetecting && isVideoReady) {
-      // Run detection every 3 seconds
+    if (cameraState === "on") {
       detectionIntervalRef.current = setInterval(simulateDetection, 3000);
     }
     
@@ -159,7 +164,7 @@ export default function Detection() {
         detectionIntervalRef.current = null;
       }
     };
-  }, [isCameraOpen, isDetecting, isVideoReady, simulateDetection]);
+  }, [cameraState, simulateDetection]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4" dir="rtl">
@@ -177,18 +182,36 @@ export default function Detection() {
           <CardContent className="space-y-6">
             {/* Camera View */}
             <div className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden border-2 border-slate-700">
-              {isCameraOpen ? (
+              {/* Video element - always rendered but hidden when off */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover ${cameraState === "on" ? "block" : "hidden"}`}
+                style={{ transform: "scaleX(-1)" }}
+              />
+              
+              {/* Camera off state */}
+              {cameraState === "off" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                  <CameraOff className="w-16 h-16 mb-4" />
+                  <p>الكاميرا متوقفة</p>
+                </div>
+              )}
+              
+              {/* Loading state */}
+              {cameraState === "loading" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900">
+                  <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
+                  <p className="text-white">جاري تحميل الكاميرا...</p>
+                </div>
+              )}
+              
+              {/* Detection overlay - only when camera is on */}
+              {cameraState === "on" && (
                 <>
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                    style={{ transform: "scaleX(-1)" }}
-                  />
-                  
-                  {/* Detection overlay using CSS instead of canvas for better compatibility */}
+                  {/* Detection boxes */}
                   {detectedPersons.map(person => (
                     <div
                       key={person.id}
@@ -200,57 +223,38 @@ export default function Detection() {
                         height: person.height,
                       }}
                     >
-                      {/* Bounding box */}
-                      <div className="absolute inset-0 border-3 border-emerald-500 rounded-sm">
-                        {/* Corner accents */}
-                        <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-emerald-400" />
-                        <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-emerald-400" />
-                        <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-emerald-400" />
-                        <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-emerald-400" />
+                      <div className="absolute inset-0 border-4 border-emerald-500 rounded">
+                        <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-400 -translate-x-1 -translate-y-1" />
+                        <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-400 translate-x-1 -translate-y-1" />
+                        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-400 -translate-x-1 translate-y-1" />
+                        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-400 translate-x-1 translate-y-1" />
                       </div>
                       
-                      {/* Name label */}
-                      <div className="absolute -top-8 left-0 right-0 bg-emerald-600 text-white text-center py-1 px-2 rounded text-sm font-bold">
+                      <div className="absolute -top-9 left-0 right-0 bg-emerald-600 text-white text-center py-1.5 px-3 rounded text-sm font-bold whitespace-nowrap">
                         {person.fullName}
                       </div>
                       
-                      {/* Status badge */}
                       <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">
                         مفقود
                       </div>
                     </div>
                   ))}
                   
-                  {/* Scanning overlay */}
+                  {/* Scanning indicator */}
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 border-2 border-emerald-500/30 animate-pulse" />
-                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/80 px-3 py-1 rounded-full">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 px-3 py-1.5 rounded-full shadow-lg">
+                      <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
                       <span className="text-white text-sm font-medium">جاري البحث</span>
                     </div>
                   </div>
-                  
-                  {/* Loading state while video initializes */}
-                  {!isVideoReady && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
-                      <div className="text-center">
-                        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                        <p className="text-white">جاري تحميل الكاميرا...</p>
-                      </div>
-                    </div>
-                  )}
                 </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
-                  <CameraOff className="w-16 h-16 mb-4" />
-                  <p>الكاميرا متوقفة</p>
-                </div>
               )}
             </div>
 
             {/* Camera Controls */}
             <div className="flex justify-center gap-4">
-              {isCameraOpen ? (
+              {cameraState === "on" ? (
                 <Button 
                   onClick={stopCamera}
                   variant="destructive"
@@ -265,9 +269,19 @@ export default function Detection() {
                   onClick={startCamera}
                   className="bg-emerald-600 hover:bg-emerald-700 px-8"
                   size="lg"
+                  disabled={cameraState === "loading"}
                 >
-                  <Camera className="w-5 h-5 ml-2" />
-                  تشغيل الكاميرا
+                  {cameraState === "loading" ? (
+                    <>
+                      <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                      جاري التحميل...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-5 h-5 ml-2" />
+                      تشغيل الكاميرا
+                    </>
+                  )}
                 </Button>
               )}
             </div>
