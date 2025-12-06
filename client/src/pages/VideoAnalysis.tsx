@@ -119,37 +119,37 @@ export default function VideoAnalysis() {
     const totalFrames = 100;
     const detections: DetectedPerson[] = [];
     
+    // Decide upfront if we will detect anyone (30% chance to find someone)
+    const willDetectSomeone = Math.random() < 0.3;
+    const detectionFrame = willDetectSomeone ? Math.floor(40 + Math.random() * 40) : -1; // Detect between 40-80%
+    const personToDetect = willDetectSomeone ? missingPersons[Math.floor(Math.random() * missingPersons.length)] : null;
+    
     for (let frame = 0; frame <= totalFrames; frame++) {
       await new Promise(resolve => setTimeout(resolve, 50));
       setAnalysisProgress(frame);
       
-      // Randomly detect persons at certain frames
-      if (frame % 20 === 0 && frame > 0 && Math.random() > 0.3) {
-        const randomPerson = missingPersons[Math.floor(Math.random() * missingPersons.length)];
+      // Only detect at the predetermined frame
+      if (frame === detectionFrame && personToDetect) {
+        const detection: DetectedPerson = {
+          id: personToDetect.id,
+          fullName: personToDetect.fullName,
+          photoUrl: personToDetect.photoUrl,
+          age: personToDetect.age,
+          gender: personToDetect.gender,
+          lastSeenLocation: personToDetect.lastSeenLocation,
+          timestamp: (frame / totalFrames) * (duration || 60),
+          confidence: 75 + Math.random() * 20, // 75-95% confidence
+        };
+        detections.push(detection);
+        setDetectedPersons([...detections]);
         
-        // Check if already detected
-        if (!detections.find(d => d.id === randomPerson.id)) {
-          const detection: DetectedPerson = {
-            id: randomPerson.id,
-            fullName: randomPerson.fullName,
-            photoUrl: randomPerson.photoUrl,
-            age: randomPerson.age,
-            gender: randomPerson.gender,
-            lastSeenLocation: randomPerson.lastSeenLocation,
-            timestamp: (frame / totalFrames) * (duration || 60),
-            confidence: 85 + Math.random() * 14, // 85-99% confidence
-          };
-          detections.push(detection);
-          setDetectedPersons([...detections]);
-          
-          toast.warning(
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
-              <span>تم اكتشاف: {randomPerson.fullName}</span>
-            </div>,
-            { duration: 3000 }
-          );
-        }
+        toast.warning(
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <span>تم اكتشاف: {personToDetect.fullName}</span>
+          </div>,
+          { duration: 3000 }
+        );
       }
     }
 

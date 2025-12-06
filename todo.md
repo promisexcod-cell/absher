@@ -34,3 +34,7 @@
 - [x] Add official Absher logo
 - [x] Add video upload feature for face recognition
 - [x] Implement face recognition from video (simulation)
+
+## Bug Fixes (User Reported)
+- [x] Fix font not displaying correctly (changed to IBM Plex Sans Arabic)
+- [x] Fix video analysis showing all persons instead of realistic detection
