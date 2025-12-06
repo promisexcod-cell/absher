@@ -17,3 +17,6 @@
 - [x] Responsive design for mobile and desktop
 - [x] Dark theme with professional styling
 - [x] Loading states and error handling
+
+## Bug Fixes
+- [x] Fix camera video feed not displaying after permission granted

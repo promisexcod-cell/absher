@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, CameraOff, AlertTriangle, User, MapPin, Calendar } from "lucide-react";
+import { Camera, CameraOff, AlertTriangle, User, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
@@ -21,6 +21,7 @@ interface DetectedPerson {
 
 export default function Detection() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [detectedPersons, setDetectedPersons] = useState<DetectedPerson[]>([]);
   const [isDetecting, setIsDetecting] = useState(false);
   
@@ -34,22 +35,36 @@ export default function Detection() {
 
   const startCamera = useCallback(async () => {
     try {
+      setIsVideoReady(false);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          facingMode: "environment",
+          facingMode: "user",
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
       });
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         setIsCameraOpen(true);
-        setIsDetecting(true);
-        toast.success("تم تشغيل الكاميرا - جاري البحث عن المفقودين");
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().then(() => {
+              setIsVideoReady(true);
+              setIsDetecting(true);
+              toast.success("تم تشغيل الكاميرا - جاري البحث عن المفقودين");
+            }).catch((err) => {
+              console.error("Error playing video:", err);
+              toast.error("حدث خطأ في تشغيل الفيديو");
+            });
+          }
+        };
       }
     } catch (error) {
-      toast.error("لا يمكن الوصول إلى الكاميرا");
+      toast.error("لا يمكن الوصول إلى الكاميرا - تأكد من منح الإذن");
       console.error(error);
     }
   }, []);
@@ -58,6 +73,9 @@ export default function Detection() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
@@ -68,13 +86,21 @@ export default function Detection() {
       detectionIntervalRef.current = null;
     }
     setIsCameraOpen(false);
+    setIsVideoReady(false);
     setIsDetecting(false);
     setDetectedPersons([]);
   }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
   // Simulate face detection - in a real app, this would use a face detection API
   const simulateDetection = useCallback(() => {
-    if (!missingPersons || missingPersons.length === 0) return;
+    if (!missingPersons || missingPersons.length === 0 || !isVideoReady) return;
     
     // Randomly decide if we "detect" someone (for simulation purposes)
     const shouldDetect = Math.random() > 0.7; // 30% chance of detection
@@ -82,14 +108,15 @@ export default function Detection() {
     if (shouldDetect) {
       const randomPerson = missingPersons[Math.floor(Math.random() * missingPersons.length)];
       
-      // Generate random position for the bounding box
-      const videoWidth = videoRef.current?.videoWidth || 640;
-      const videoHeight = videoRef.current?.videoHeight || 480;
+      // Generate random position for the bounding box based on displayed video size
+      const videoElement = videoRef.current;
+      const displayWidth = videoElement?.clientWidth || 640;
+      const displayHeight = videoElement?.clientHeight || 480;
       
-      const boxWidth = 150 + Math.random() * 100;
+      const boxWidth = 120 + Math.random() * 80;
       const boxHeight = boxWidth * 1.3;
-      const x = Math.random() * (videoWidth - boxWidth);
-      const y = Math.random() * (videoHeight - boxHeight);
+      const x = 50 + Math.random() * (displayWidth - boxWidth - 100);
+      const y = 50 + Math.random() * (displayHeight - boxHeight - 100);
       
       const detected: DetectedPerson = {
         id: randomPerson.id,
@@ -117,106 +144,22 @@ export default function Detection() {
     } else {
       setDetectedPersons([]);
     }
-  }, [missingPersons]);
+  }, [missingPersons, isVideoReady]);
 
-  // Draw detection overlay
-  const drawOverlay = useCallback(() => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    
-    if (!canvas || !video || !isCameraOpen) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    // Match canvas size to video
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw detection boxes
-    detectedPersons.forEach(person => {
-      // Draw bounding box
-      ctx.strokeStyle = "#10b981"; // emerald-500
-      ctx.lineWidth = 3;
-      ctx.strokeRect(person.x, person.y, person.width, person.height);
-      
-      // Draw corner accents
-      const cornerLength = 20;
-      ctx.strokeStyle = "#10b981";
-      ctx.lineWidth = 4;
-      
-      // Top-left
-      ctx.beginPath();
-      ctx.moveTo(person.x, person.y + cornerLength);
-      ctx.lineTo(person.x, person.y);
-      ctx.lineTo(person.x + cornerLength, person.y);
-      ctx.stroke();
-      
-      // Top-right
-      ctx.beginPath();
-      ctx.moveTo(person.x + person.width - cornerLength, person.y);
-      ctx.lineTo(person.x + person.width, person.y);
-      ctx.lineTo(person.x + person.width, person.y + cornerLength);
-      ctx.stroke();
-      
-      // Bottom-left
-      ctx.beginPath();
-      ctx.moveTo(person.x, person.y + person.height - cornerLength);
-      ctx.lineTo(person.x, person.y + person.height);
-      ctx.lineTo(person.x + cornerLength, person.y + person.height);
-      ctx.stroke();
-      
-      // Bottom-right
-      ctx.beginPath();
-      ctx.moveTo(person.x + person.width - cornerLength, person.y + person.height);
-      ctx.lineTo(person.x + person.width, person.y + person.height);
-      ctx.lineTo(person.x + person.width, person.y + person.height - cornerLength);
-      ctx.stroke();
-      
-      // Draw name label
-      const labelHeight = 30;
-      const labelY = person.y - labelHeight - 5;
-      
-      ctx.fillStyle = "rgba(16, 185, 129, 0.9)"; // emerald with opacity
-      ctx.fillRect(person.x, labelY, person.width, labelHeight);
-      
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 16px Arial";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(person.fullName, person.x + person.width / 2, labelY + labelHeight / 2);
-      
-      // Draw "FOUND" badge
-      ctx.fillStyle = "#ef4444"; // red
-      ctx.fillRect(person.x + person.width - 60, person.y + 5, 55, 20);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 12px Arial";
-      ctx.fillText("مفقود", person.x + person.width - 32, person.y + 15);
-    });
-    
-    animationRef.current = requestAnimationFrame(drawOverlay);
-  }, [detectedPersons, isCameraOpen]);
-
-  // Start detection simulation when camera is open
+  // Start detection simulation when camera is open and video is ready
   useEffect(() => {
-    if (isCameraOpen && isDetecting) {
+    if (isCameraOpen && isDetecting && isVideoReady) {
       // Run detection every 3 seconds
       detectionIntervalRef.current = setInterval(simulateDetection, 3000);
-      animationRef.current = requestAnimationFrame(drawOverlay);
     }
     
     return () => {
       if (detectionIntervalRef.current) {
         clearInterval(detectionIntervalRef.current);
-      }
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        detectionIntervalRef.current = null;
       }
     };
-  }, [isCameraOpen, isDetecting, simulateDetection, drawOverlay]);
+  }, [isCameraOpen, isDetecting, isVideoReady, simulateDetection]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4" dir="rtl">
@@ -240,12 +183,44 @@ export default function Detection() {
                     ref={videoRef}
                     autoPlay
                     playsInline
+                    muted
                     className="w-full h-full object-cover"
+                    style={{ transform: "scaleX(-1)" }}
                   />
-                  <canvas
-                    ref={canvasRef}
-                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                  />
+                  
+                  {/* Detection overlay using CSS instead of canvas for better compatibility */}
+                  {detectedPersons.map(person => (
+                    <div
+                      key={person.id}
+                      className="absolute pointer-events-none"
+                      style={{
+                        left: person.x,
+                        top: person.y,
+                        width: person.width,
+                        height: person.height,
+                      }}
+                    >
+                      {/* Bounding box */}
+                      <div className="absolute inset-0 border-3 border-emerald-500 rounded-sm">
+                        {/* Corner accents */}
+                        <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-emerald-400" />
+                        <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-emerald-400" />
+                        <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-emerald-400" />
+                        <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-emerald-400" />
+                      </div>
+                      
+                      {/* Name label */}
+                      <div className="absolute -top-8 left-0 right-0 bg-emerald-600 text-white text-center py-1 px-2 rounded text-sm font-bold">
+                        {person.fullName}
+                      </div>
+                      
+                      {/* Status badge */}
+                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">
+                        مفقود
+                      </div>
+                    </div>
+                  ))}
+                  
                   {/* Scanning overlay */}
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 border-2 border-emerald-500/30 animate-pulse" />
@@ -254,6 +229,16 @@ export default function Detection() {
                       <span className="text-white text-sm font-medium">جاري البحث</span>
                     </div>
                   </div>
+                  
+                  {/* Loading state while video initializes */}
+                  {!isVideoReady && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
+                      <div className="text-center">
+                        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                        <p className="text-white">جاري تحميل الكاميرا...</p>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
