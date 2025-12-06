@@ -4,12 +4,12 @@ import type { TrpcContext } from "./_core/context";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
-function createAuthContext(): TrpcContext {
+function createAuthContext(userId: number = 1): TrpcContext {
   const user: AuthenticatedUser = {
-    id: 1,
-    openId: "test-user-123",
-    email: "test@example.com",
-    name: "Test User",
+    id: userId,
+    openId: `test-user-${userId}`,
+    email: `test${userId}@example.com`,
+    name: `Test User ${userId}`,
     loginMethod: "manus",
     role: "user",
     createdAt: new Date(),
@@ -43,19 +43,36 @@ function createPublicContext(): TrpcContext {
 }
 
 describe("missingPerson.list", () => {
-  it("returns an array of missing persons (public access)", async () => {
+  it("requires authentication (privacy protection)", async () => {
     const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Should throw because list now requires authentication
+    await expect(caller.missingPerson.list()).rejects.toThrow();
+  });
+
+  it("returns user's own reports when authenticated", async () => {
+    const ctx = createAuthContext(1);
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.missingPerson.list();
 
+    // Should return an array (may be empty if no reports by this user)
     expect(Array.isArray(result)).toBe(true);
   });
 });
 
 describe("missingPerson.getById", () => {
-  it("returns undefined for non-existent person", async () => {
+  it("requires authentication (privacy protection)", async () => {
     const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Should throw because getById now requires authentication
+    await expect(caller.missingPerson.getById({ id: 99999 })).rejects.toThrow();
+  });
+
+  it("returns undefined for non-existent person when authenticated", async () => {
+    const ctx = createAuthContext(1);
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.missingPerson.getById({ id: 99999 });

@@ -29,7 +29,9 @@ export default function Detection() {
   const streamRef = useRef<MediaStream | null>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { data: missingPersons } = trpc.missingPerson.list.useQuery();
+  const { data: missingPersons } = trpc.missingPerson.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
   const startCamera = useCallback(async () => {
     setCameraState("loading");

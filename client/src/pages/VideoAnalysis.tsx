@@ -49,7 +49,9 @@ export default function VideoAnalysis() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { data: missingPersons } = trpc.missingPerson.list.useQuery();
+  const { data: missingPersons } = trpc.missingPerson.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

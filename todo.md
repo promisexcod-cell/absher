@@ -38,3 +38,8 @@
 ## Bug Fixes (User Reported)
 - [x] Fix font not displaying correctly (changed to IBM Plex Sans Arabic)
 - [x] Fix video analysis showing all persons instead of realistic detection
+
+## Privacy Update (User Request)
+- [x] Make missing persons visible only to the reporter (not public)
+- [x] Update backend API to filter by reporter ID
+- [x] Update frontend to show only user's own reports

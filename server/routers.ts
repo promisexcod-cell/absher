@@ -66,16 +66,21 @@ export const appRouter = router({
         return person;
       }),
 
-    // Get all missing persons (public for detection feature)
-    list: publicProcedure.query(async () => {
-      return getAllMissingPersons();
+    // Get missing persons reported by current user only (privacy protection)
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getMissingPersonsByReporter(ctx.user.id);
     }),
 
-    // Get a specific missing person by ID
-    getById: publicProcedure
+    // Get a specific missing person by ID (only if reported by current user)
+    getById: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getMissingPersonById(input.id);
+      .query(async ({ ctx, input }) => {
+        const person = await getMissingPersonById(input.id);
+        // Only return if the current user is the reporter
+        if (person && person.reporterId === ctx.user.id) {
+          return person;
+        }
+        return undefined;
       }),
 
     // Update status (for marking as found)
