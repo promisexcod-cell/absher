@@ -8,6 +8,14 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
+// Mock user for demo purposes
+const DEMO_USER = {
+  id: 1,
+  name: "مستخدم تجريبي",
+  email: "demo@absher.sa",
+  openId: "demo-user",
+};
+
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
@@ -42,15 +50,18 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
+    // Always return demo user for testing
+    const user = meQuery.data ?? DEMO_USER;
+    
     localStorage.setItem(
       "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
+      JSON.stringify(user)
     );
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      user: user,
+      loading: false, // Never show loading
+      error: null, // Never show error
+      isAuthenticated: true, // Always authenticated
     };
   }, [
     meQuery.data,
@@ -60,14 +71,9 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.isPending,
   ]);
 
+  // Disable redirect for demo
   useEffect(() => {
-    if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
-    if (state.user) return;
-    if (typeof window === "undefined") return;
-    if (window.location.pathname === redirectPath) return;
-
-    window.location.href = redirectPath
+    // Do nothing - always allow access
   }, [
     redirectOnUnauthenticated,
     redirectPath,
