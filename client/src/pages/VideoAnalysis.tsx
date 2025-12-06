@@ -210,6 +210,8 @@ export default function VideoAnalysis() {
     };
   }, [videoUrl]);
 
+  const hasNoMissingPersons = !missingPersons || missingPersons.length === 0;
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
       {/* Header */}
@@ -263,11 +265,39 @@ export default function VideoAnalysis() {
             <Video className="w-8 h-8" />
             تحليل الفيديو للبحث عن المفقودين
           </h1>
-          <p className="text-white/80 mt-2">ارفع فيديو وسيتم تحليله للبحث عن الأشخاص المفقودين المسجلين في النظام</p>
+          <p className="text-white/80 mt-2">ارفع فيديو وسيتم تحليله باستخدام تقنية التعرف على الوجوه AWS Rekognition</p>
         </div>
       </div>
 
       <div className="container mx-auto py-8 space-y-6">
+        {/* Warning Card - No Missing Persons */}
+        {hasNoMissingPersons && (
+          <Card className="bg-[#FFF8E1] border-2 border-[#F9A825] shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="w-12 h-12 text-[#F9A825]" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <h3 className="text-xl font-bold text-gray-800">لا يوجد أشخاص مفقودين مسجلين</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    يجب عليك أولاً تسجيل بلاغ عن شخص مفقود مع صورة واضحة للوجه قبل استخدام ميزة تحليل الفيديو.
+                  </p>
+                  <Link href="/report">
+                    <Button 
+                      className="bg-[#F57C00] hover:bg-[#E65100] text-white font-bold"
+                      size="lg"
+                    >
+                      إضافة بلاغ جديد
+                      <ArrowRight className="w-5 h-5 mr-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Video Upload Card */}
         <Card className="bg-white border-0 shadow-lg">
           <CardHeader className="border-b border-gray-100">
@@ -381,7 +411,7 @@ export default function VideoAnalysis() {
                   <Button
                     onClick={simulateAnalysis}
                     className="w-full bg-[#1B7D3E] hover:bg-[#156332] py-6 text-lg"
-                    disabled={!missingPersons || missingPersons.length === 0}
+                    disabled={hasNoMissingPersons}
                   >
                     <Search className="w-5 h-5 ml-2" />
                     بدء تحليل الفيديو
